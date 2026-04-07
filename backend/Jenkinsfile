@@ -12,6 +12,8 @@ metadata:
     sidecar.istio.io/inject: "false"
 spec:
   restartPolicy: Never
+  imagePullSecrets:
+      - name: dockerhub-cred1
   containers:
     - name: gradle
       image: eclipse-temurin:17-jdk

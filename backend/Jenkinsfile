@@ -62,6 +62,24 @@ spec:
       }
     }
 
+    stage('Setup K8s Resources') {
+      steps {
+        container('kubectl') {
+          sh """
+            kubectl apply -f ${WORKSPACE}/k8s/01-db-statefulset.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/02-db-service.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/03-backend-configmap.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/04-backend-deployment.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/04-backend-green-deployment.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/05-backend-service.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/08-tls-secret.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/10-backend-ingress.yaml -n ${NAMESPACE}
+            kubectl apply -f ${WORKSPACE}/k8s/11-websocket-ingress.yaml -n ${NAMESPACE}
+          """
+        }
+      }
+    }
+
     stage('Gradle Build') {
       steps {
         container('gradle') {

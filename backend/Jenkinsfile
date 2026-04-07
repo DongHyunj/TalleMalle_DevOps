@@ -2,10 +2,14 @@ pipeline {
   agent {
     kubernetes {
       label "gradle-kaniko-${UUID.randomUUID().toString()}"
+      namespace "jdh"
       defaultContainer 'gradle'
       yaml """
 apiVersion: v1
 kind: Pod
+metadata:
+  annotations:
+    sidecar.istio.io/inject: "false"
 spec:
   restartPolicy: Never
   containers:
@@ -44,7 +48,8 @@ spec:
   environment {
     IMAGE_NAME     = 'deatytim/tmbackend'
     IMAGE_TAG      = "${env.BUILD_NUMBER}"
-    DEPLOY_NAME    = 'backend-deployment'
+    NAMESPACE      = 'jdh'
+    SVC_NAME       = 'backend-service'
     CONTAINER_NAME = 'backend'
   }
 
@@ -74,39 +79,54 @@ spec:
       steps {
         container('kaniko') {
           sh """
-            /kaniko/executor \
-              --context=${WORKSPACE}/backend \
-              --dockerfile=${WORKSPACE}/backend/Dockerfile \
-              --destination=${IMAGE_NAME}:${IMAGE_TAG} \
-              --destination=${IMAGE_NAME}:latest \
-              --single-snapshot \
-              --use-new-run \
-              --cache=true \
+            /kaniko/executor \\
+              --context=${WORKSPACE}/backend \\
+              --dockerfile=${WORKSPACE}/backend/Dockerfile \\
+              --destination=${IMAGE_NAME}:${IMAGE_TAG} \\
+              --destination=${IMAGE_NAME}:latest \\
+              --single-snapshot \\
+              --use-new-run \\
+              --cache=true \\
               --snapshotMode=redo
           """
         }
       }
     }
 
-    stage('Deploy to Kubernetes') {
+    stage('Blue/Green Deploy') {
       steps {
         container('kubectl') {
-          sh """
-            kubectl set image deployment/${DEPLOY_NAME} \
-              ${CONTAINER_NAME}=${IMAGE_NAME}:${IMAGE_TAG}
-            kubectl rollout status deployment/${DEPLOY_NAME} --timeout=120s
-          """
-        }
-      }
-    }
+          script {
+            // 현재 서비스가 가리키는 slot 확인
+            def activeSlot = sh(
+              script: "kubectl get svc ${SVC_NAME} -n ${NAMESPACE} -o jsonpath='{.spec.selector.slot}'",
+              returnStdout: true
+            ).trim()
 
-    stage('Rollback on Failure') {
-      when {
-        expression { currentBuild.result == 'FAILURE' }
-      }
-      steps {
-        container('kubectl') {
-          sh "kubectl rollout undo deployment/${DEPLOY_NAME}"
+            // active가 blue면 green에 배포, green이면 blue에 배포
+            def newSlot   = (activeSlot == 'blue') ? 'green' : 'blue'
+            def newDeploy = "backend-${newSlot}-deployment"
+
+            echo "현재 active slot: ${activeSlot} → 배포 대상: ${newSlot}"
+
+            // inactive deployment에 새 이미지 배포 및 롤아웃 대기
+            sh """
+              kubectl set image deployment/${newDeploy} \\
+                ${CONTAINER_NAME}=${IMAGE_NAME}:${IMAGE_TAG} \\
+                -n ${NAMESPACE}
+
+              kubectl rollout status deployment/${newDeploy} \\
+                -n ${NAMESPACE} --timeout=180s
+            """
+
+            // 롤아웃 성공 → 서비스 트래픽을 새 slot으로 전환
+            sh """
+              kubectl patch svc ${SVC_NAME} -n ${NAMESPACE} \\
+                -p '{"spec":{"selector":{"type":"backend","slot":"${newSlot}"}}}'
+            """
+
+            echo "Blue/Green 전환 완료: ${activeSlot} → ${newSlot}"
+          }
         }
       }
     }
@@ -117,7 +137,7 @@ spec:
       echo "Backend 배포 완료: ${IMAGE_NAME}:${IMAGE_TAG}"
     }
     failure {
-      echo "Backend 배포 실패"
+      echo "Backend 배포 실패 — 서비스는 기존 slot 유지"
     }
   }
 }

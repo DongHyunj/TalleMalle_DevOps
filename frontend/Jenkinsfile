@@ -2,6 +2,7 @@ pipeline {
   agent {
     kubernetes {
       label "node-kaniko-${UUID.randomUUID().toString()}"
+      namespace "jdh"
       defaultContainer 'node'
       yaml """
 apiVersion: v1
@@ -95,9 +96,10 @@ spec:
       steps {
         container('kubectl') {
           sh """
-            kubectl set image deployment/${DEPLOY_NAME} \
-              ${CONTAINER_NAME}=${IMAGE_NAME}:${IMAGE_TAG}
-            kubectl rollout status deployment/${DEPLOY_NAME} --timeout=120s
+            kkubectl set image deployment/${DEPLOY_NAME} \
+              ${CONTAINER_NAME}=${IMAGE_NAME}:${IMAGE_TAG} -n jdh
+
+            kubectl rollout status deployment/${DEPLOY_NAME} -n jdh --timeout=120s
           """
         }
       }
@@ -109,7 +111,7 @@ spec:
       }
       steps {
         container('kubectl') {
-          sh "kubectl rollout undo deployment/${DEPLOY_NAME}"
+          sh "kubectl rollout undo deployment/${DEPLOY_NAME} -n jdh"
         }
       }
     }

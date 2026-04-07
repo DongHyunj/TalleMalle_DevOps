@@ -37,7 +37,7 @@ spec:
       emptyDir: {}
     - name: docker-config
       secret:
-        secretName: dockerhub-cred
+        secretName: dockerhub-cred1
         items:
           - key: .dockerconfigjson
             path: config.json

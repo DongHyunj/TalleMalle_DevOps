@@ -178,6 +178,9 @@ EOF
     stage('npm Install & Build') {
       steps {
         container('node') {
+          withCredentials([file(credentialsId: 'jdh-front.env', variable: 'ENV_FILE')]) {
+            sh 'cp $ENV_FILE frontend/.env'
+          }
           dir('frontend') {
             sh '''
               npm install

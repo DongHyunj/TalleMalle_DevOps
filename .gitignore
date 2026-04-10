@@ -11,4 +11,4 @@ db/*
 .DS_Store
 Thumbs.db
 
-k8s/*.yaml
+k8s/backend-configmap.yaml

@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: jdh
+data:
+  # DB 설정 (StatefulSet 서비스명 사용)
+  DB_URL: "jdbc:mariadb://<DB_서비스명>:<포트>/<DB명>"
+  DB_USER: "<DB_사용자명>"
+  DB_PASS: "<DB_비밀번호>"
+
+  # Spring 서버 설정 (Ingress가 SSL 처리 → 백엔드는 HTTP 8080)
+  SERVER_PORT: "<서버_포트>"
+  SERVER_SSL_ENABLED: "<SSL_활성화_여부>"
+
+  # JWT
+  JWT_SECRET: "<JWT_시크릿_키>"
+  JWT_EXPIRE: "<JWT_만료_시간_밀리초>"
+
+  # AES 암호화
+  AES_KEY: "<AES_암호화_키_32자>"
+
+  # 쿠키 설정
+  COOKIE_DOMAIN: "<쿠키_도메인>"
+  FRONT_URL: "<프론트엔드_URL>"
+  API_URL: "<API_URL>"
+
+  # --- Kakao OAuth ---
+  KAKAO_API_KEY: "<카카오_API_키>"
+  KAKAO_CLIENT_ID: "<카카오_클라이언트_ID>"
+  KAKAO_CLIENT_SECRET: "<카카오_클라이언트_시크릿>"
+  KAKAO_REDIRECT_URI: "<카카오_리다이렉트_URI>"
+
+  # --- Google OAuth ---
+  GOOGLE_CLIENT_ID: "<구글_클라이언트_ID>"
+  GOOGLE_CLIENT_SECRET: "<구글_클라이언트_시크릿>"
+  GOOGLE_REDIRECT_URI: "<구글_리다이렉트_URI>"
+
+  # 이메일
+  MAIL_ADDR: "<발신_이메일_주소>"
+  MAIL_PASS: "<이메일_앱_비밀번호>"
+
+  # AWS S3
+  AWS_ACCESS_KEY: "<AWS_액세스_키>"
+  AWS_SECRET_KEY: "<AWS_시크릿_키>"
+
+  # 결제
+  TOSS_SECRET_KEY: "<토스_시크릿_키>"
+  PORTONE_SECRET_API: "<포트원_시크릿_API_키>"
+
+  # 웹푸시 VAPID
+  VAPID_PUBLIC_KEY: "<VAPID_공개_키>"
+  VAPID_PRIVATE_KEY: "<VAPID_개인_키>"
+
+  # 업로드 경로
+  UPLOAD_PATH: "<파일_업로드_경로>"

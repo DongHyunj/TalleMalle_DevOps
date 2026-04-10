@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-blue-deployment
+  namespace: jdh
+  labels:
+    type: frontend
+    slot: blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: frontend
+      slot: blue
+  template:
+    metadata:
+      labels:
+        type: frontend
+        slot: blue
+    spec:
+      containers:
+        - name: frontend
+          image: deatytim/tmfront:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

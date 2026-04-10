@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-statefulset
+  namespace: jdh
+spec:
+  replicas: 1
+  serviceName: db-service
+  selector:
+    matchLabels:
+      type: db
+  template:
+    metadata:
+      labels:
+        type: db
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: mariadb
+          image: mariadb:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              value: qwer1234
+            - name: MARIADB_ROOT_HOST
+              value: "%"
+            - name: MARIADB_DATABASE
+              value: tallemalle
+          volumeMounts:
+            - name: volume
+              mountPath: /var/lib/mysql
+      terminationGracePeriodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1G
+        storageClassName: longhorn

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-green-deployment
+  namespace: jdh
+  labels:
+    type: frontend
+    slot: green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: frontend
+      slot: green
+  template:
+    metadata:
+      labels:
+        type: frontend
+        slot: green
+    spec:
+      containers:
+        - name: frontend
+          image: deatytim/tmfront:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
